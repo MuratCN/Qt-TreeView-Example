@@ -18,6 +18,15 @@ Menu::Menu(QString name, QString id, QList<Menu> subCategories, Menu *parent):
 	Menu(name,id,parent);
 }
 
+Menu* Menu::parent() const
+{
+	return mParent;
+}
+void Menu::setParent(Menu *parent)
+{
+	mParent = parent;
+}
+
 
 QString Menu::name() const
 {
@@ -80,7 +89,7 @@ void Menu::removeSubCategory(const int position)
 
 void Menu::removeSubCategory(const Menu &menu)
 {
-	mSubCategories.removeAt(mSubCategories.indexOf(menu));
+//	mSubCategories.removeAt(mSubCategories.indexOf(menu));
 }
 
 void Menu::removeSubCategories()
@@ -89,7 +98,7 @@ void Menu::removeSubCategories()
 	mSubCategories.clear();
 }
 
-void Menu::addCategory(const Menu &menu, int position, const Menu *parent)
+void Menu::addCategory(const Menu &menu, int position, Menu *parent)
 {
 	if(parent != 0) {
 		parent->addSubCategory(menu,position);
@@ -98,7 +107,7 @@ void Menu::addCategory(const Menu &menu, int position, const Menu *parent)
 	}
 }
 
-void Menu::removeCategory(const Menu &menu, const Menu *parent)
+void Menu::removeCategory(const Menu &menu, Menu *parent)
 {
 	if(parent != 0) {
 		parent->removeSubCategory(menu);

@@ -18,14 +18,16 @@ SOURCES += main.cpp\
     treemodel.cpp \
     menu.cpp \
     category.cpp \
-    window.cpp 
+    window.cpp \ 
+    categorytree.cpp
 
 HEADERS  += mainwindow.h \
     treeitem.h \
     treemodel.h \
     menu.h \
     category.h \
-    window.h
+    window.h \
+    categorytree.h
 
 RESOURCES +=
 

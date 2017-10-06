@@ -1,18 +1,23 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
-#include <QWidget>
+#include "ui_mainwindow.h"
+
+#include <QMainWindow>
+#include <QModelIndex>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 
 #include "category.h"
+#include "treemodel.h"
+
 
 namespace Ui {
 class Window;
 }
 
-class Window : public QWidget
+class Window : public QMainWindow, private Ui::MainWindow
 {
 	Q_OBJECT
 
@@ -32,8 +37,15 @@ public:
 	void read(const QJsonObject &json);
 	void write(QJsonObject &json) const;
 
+public slots:
+	void updateActions();
+private slots:
+	void insertChild();
+	bool insertColumn();
+	void insertRow();
+	bool removeColumn();
+	void removeRow();
 private:
-	Ui::Window *ui;
 	Category mCategory;
 };
 

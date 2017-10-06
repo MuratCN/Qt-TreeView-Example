@@ -16,7 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
 	TreeModel *model = new TreeModel(headers, file.readAll());
 	file.close();
 
-	view->setModel(model);
+	view->setModel(model); // Set custom tree view
 	for (int column = 0; column < model->columnCount(); ++column)
 		view->resizeColumnToContents(column);
 

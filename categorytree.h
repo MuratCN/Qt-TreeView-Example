@@ -1,27 +1,18 @@
-#ifndef TREEMODEL_H
-#define TREEMODEL_H
+#ifndef CATEGORYTREE_H
+#define CATEGORYTREE_H
 
 #include <QAbstractItemModel>
 #include <QModelIndex>
-#include <QVariant>
-#include <QTreeView>
 
-#include "category.h"
+//class Category; // veya #include "category.h"
 
-class TreeItem;
-
-class TreeModel : public QAbstractItemModel
+class CategoryTree : public QAbstractItemModel
 {
 	Q_OBJECT
 
 public:
-	TreeModel(const QStringList &headers, QObject *parent = 0);
-	TreeModel(const QStringList &headers, const QString &data,
-			  QObject *parent = 0);
-	~TreeModel();
-
-	Category category() const;
-	void setCategory(const Category &category);
+	CategoryTree(QObject *parent = 0);
+	~CategoryTree();
 
 	QVariant data(const QModelIndex &index, int role) const override;
 	QVariant headerData(int section, Qt::Orientation orientation,
@@ -48,15 +39,6 @@ public:
 					const QModelIndex &parent = QModelIndex()) override;
 	bool removeRows(int position, int rows,
 					const QModelIndex &parent = QModelIndex()) override;
-
-private:
-	void setupModelData(const QStringList &lines, TreeItem *parent);
-	void setupModelData(const Category category);
-	TreeItem *getItem(const QModelIndex &index) const;
-
-	TreeItem *rootItem;
-
-	Category mCategory;
 };
 
-#endif // TREEMODEL_H
+#endif // CATEGORYTREE_H

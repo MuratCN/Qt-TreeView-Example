@@ -13,6 +13,9 @@ public:
 	Menu(QString name, QString id = "", Menu *parent = 0);
 	Menu(QString name, QString id, QList<Menu> subCategories, Menu *parent = 0);
 
+	Menu* parent() const;
+	void setParent(Menu *parent);
+
 	QString name() const;
 	void setName(const QString name);
 
@@ -28,8 +31,8 @@ public:
 	void removeSubCategory(const Menu &menu);
 	void removeSubCategories();
 
-	void addCategory(const Menu &menu, int position = -1, const Menu *parent = 0);
-	void removeCategory(const Menu &menu, const Menu *parent = 0);
+	void addCategory(const Menu &menu, int position = -1, Menu *parent = 0);
+	void removeCategory(const Menu &menu, Menu *parent = 0);
 
 	QList<Menu> subCategories() const;
 	void setSubCategories(const QList<Menu> subCategories);
