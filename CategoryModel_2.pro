@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by MuratCAN 2017-10-05T10:37:36 ;)
+# Project created by QtCreator 2017-10-06T11:55:38
 #
 #-------------------------------------------------
 
@@ -8,28 +8,17 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-TARGET = CategoryModel
+TARGET = CategoryModel_2
 TEMPLATE = app
 
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    treeitem.cpp \
     treemodel.cpp \
-    menu.cpp \
-    category.cpp \
-    window.cpp \ 
-    categorytree.cpp
+    menu.cpp
 
 HEADERS  += mainwindow.h \
-    treeitem.h \
     treemodel.h \
-    menu.h \
-    category.h \
-    window.h \
-    categorytree.h
+    menu.h
 
-RESOURCES +=
-
-FORMS += \
-    mainwindow.ui
+FORMS    += mainwindow.ui

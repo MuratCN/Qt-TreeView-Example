@@ -2,6 +2,7 @@
 #include "treemodel.h"
 
 #include <QFile>
+#include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent)
 	: QMainWindow(parent)
@@ -9,14 +10,19 @@ MainWindow::MainWindow(QWidget *parent)
 	setupUi(this);
 
 	QStringList headers;
-	headers << tr("Selected") << tr("Title") << tr("Description");
+	headers <<tr("State") <<tr("Title") << tr("Description");
 
-	QFile file("default.txt");
-	file.open(QIODevice::ReadOnly);
+	QFile file("save.json");
+//	QFile file("default.txt");
+	if (!file.open(QIODevice::ReadOnly)) {
+		qWarning("Couldn't open save file.");
+		return ;
+	}
+
 	TreeModel *model = new TreeModel(headers, file.readAll());
 	file.close();
 
-	view->setModel(model); // Set custom tree view
+	view->setModel(model);
 	for (int column = 0; column < model->columnCount(); ++column)
 		view->resizeColumnToContents(column);
 

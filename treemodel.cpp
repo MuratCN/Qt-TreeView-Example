@@ -1,29 +1,23 @@
 #include <QtWidgets>
 
-#include "treeitem.h"
+#include "menu.h"
 #include "treemodel.h"
 
-TreeModel::TreeModel(const QStringList &headers, QObject *parent)
+TreeModel::TreeModel(const QStringList &headers, const QByteArray &data, QObject *parent)
 	: QAbstractItemModel(parent)
 {
+	QJsonDocument loadDoc(QJsonDocument::fromJson(data));
+	QJsonObject json = loadDoc.object();
+
+
 	QVector<QVariant> rootData;
 	foreach (QString header, headers)
 		rootData << header;
 
-	rootItem = new TreeItem(rootData);
+	rootItem = new Menu(rootData);
 
-	setupModelData(QString("").split(QString("\n")), rootItem);
-}
-
-TreeModel::TreeModel(const QStringList &headers, const QString &data, QObject *parent)
-	: QAbstractItemModel(parent)
-{
-	QVector<QVariant> rootData;
-	foreach (QString header, headers)
-		rootData << header;
-
-	rootItem = new TreeItem(rootData);
-	setupModelData(data.split(QString("\n")), rootItem);
+	setupModelData(json, rootItem);
+//	setupModelData(QString(data).split(QString("\n")), rootItem);
 }
 
 TreeModel::~TreeModel()
@@ -34,15 +28,15 @@ TreeModel::~TreeModel()
 int TreeModel::columnCount(const QModelIndex & /* parent */) const
 {
 	return rootItem->columnCount();
-	//		return rootItem->columnCount();
 }
 
+//data method of TreeModel
 QVariant TreeModel::data(const QModelIndex &index, int role) const
 {
 	if (!index.isValid())
 		return QVariant();
 
-	TreeItem *item1 = static_cast<TreeItem*>(index.internalPointer());
+	Menu *item1 = static_cast<Menu*>(index.internalPointer());
 
 	if ( role == Qt::CheckStateRole && index.column() == 0 )
 	{
@@ -51,7 +45,7 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
 	if (role != Qt::DisplayRole && role != Qt::EditRole)
 		return QVariant();
 
-	TreeItem *item = getItem(index);
+	Menu *item = getItem(index);
 
 	return item->data(index.column());
 }
@@ -65,12 +59,10 @@ Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
 	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
 }
 
-
-
-TreeItem *TreeModel::getItem(const QModelIndex &index) const
+Menu *TreeModel::getItem(const QModelIndex &index) const
 {
 	if (index.isValid()) {
-		TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+		Menu *item = static_cast<Menu*>(index.internalPointer());
 		if (item)
 			return item;
 	}
@@ -91,9 +83,9 @@ QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent) con
 	if (parent.isValid() && parent.column() != 0)
 		return QModelIndex();
 
-	TreeItem *parentItem = getItem(parent);
+	Menu *parentItem = getItem(parent);
 
-	TreeItem *childItem = parentItem->child(row);
+	Menu *childItem = parentItem->child(row);
 	if (childItem)
 		return createIndex(row, column, childItem);
 	else
@@ -113,7 +105,7 @@ bool TreeModel::insertColumns(int position, int columns, const QModelIndex &pare
 
 bool TreeModel::insertRows(int position, int rows, const QModelIndex &parent)
 {
-	TreeItem *parentItem = getItem(parent);
+	Menu *parentItem = getItem(parent);
 	bool success;
 
 	beginInsertRows(parent, position, position + rows - 1);
@@ -128,8 +120,8 @@ QModelIndex TreeModel::parent(const QModelIndex &index) const
 	if (!index.isValid())
 		return QModelIndex();
 
-	TreeItem *childItem = getItem(index);
-	TreeItem *parentItem = childItem->parent();
+	Menu *childItem = getItem(index);
+	Menu *parentItem = childItem->parent();
 
 	if (parentItem == rootItem)
 		return QModelIndex();
@@ -153,7 +145,7 @@ bool TreeModel::removeColumns(int position, int columns, const QModelIndex &pare
 
 bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
-	TreeItem *parentItem = getItem(parent);
+	Menu *parentItem = getItem(parent);
 	bool success = true;
 
 	beginRemoveRows(parent, position, position + rows - 1);
@@ -165,25 +157,16 @@ bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
 
 int TreeModel::rowCount(const QModelIndex &parent) const
 {
-	TreeItem *parentItem = getItem(parent);
+	Menu *parentItem = getItem(parent);
 
 	return parentItem->childCount();
 }
 
-Category TreeModel::category() const
-{
-	return mCategory;
-}
-
-void TreeModel::setCategory(const Category &category)
-{
-	mCategory = category;
-}
 
 //setData method of TreeModel
 bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-	TreeItem *item = getItem(index);
+	Menu *item = getItem(index);
 	if(role == Qt::CheckStateRole)
 	{
 		qDebug()<<"Ischecked"<<item->isChecked();
@@ -207,6 +190,8 @@ bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int rol
 	return result;
 }
 
+
+
 bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
 							  const QVariant &value, int role)
 {
@@ -221,9 +206,27 @@ bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
 	return result;
 }
 
-void TreeModel::setupModelData(const QStringList &lines, TreeItem *parent)
+
+void TreeModel::setupModelData(const QJsonObject &json, Menu *parent)
 {
-	QList<TreeItem*> parents;
+	qDebug()<<"Setup";
+	QList<Menu*> parents;
+	//parents << parent;
+
+	QJsonArray categoryArray = json["categories"].toArray();
+	for (int i = 0; i < categoryArray.size(); ++i) {
+		QJsonObject categoryObject = categoryArray[i].toObject();
+		Menu *category = new Menu();
+		category->read(categoryObject,parent);
+		parents << category;
+	}
+
+	parent->setSubCategories(parents);
+}
+
+void TreeModel::setupModelData(const QStringList &lines, Menu *parent)
+{
+	QList<Menu*> parents;
 	QList<int> indentations;
 	parents << parent;
 	indentations << 0;
@@ -263,20 +266,12 @@ void TreeModel::setupModelData(const QStringList &lines, TreeItem *parent)
 			}
 
 			// Append a new item to the current parent's list of children.
-			TreeItem *parent = parents.last();
+			Menu *parent = parents.last();
 			parent->insertChildren(parent->childCount(), 1, rootItem->columnCount());
 			for (int column = 0; column < columnData.size(); ++column)
 				parent->child(parent->childCount() - 1)->setData(column, columnData[column]);
 		}
 
 		++number;
-	}
-}
-
-void TreeModel::setupModelData(const Category category)
-{
-	mCategory = category;
-	foreach (Menu category, mCategory.menuList()) {
-
 	}
 }

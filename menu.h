@@ -1,6 +1,9 @@
 #ifndef MENU_H
 #define MENU_H
 
+#include <QList>
+#include <QVariant>
+#include <QVector>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QList>
@@ -9,43 +12,36 @@
 class Menu
 {
 public:
-	Menu();
-	Menu(QString name, QString id = "", Menu *parent = 0);
-	Menu(QString name, QString id, QList<Menu> subCategories, Menu *parent = 0);
+	explicit Menu(Menu *parent = 0);
+	explicit Menu(const QVector<QVariant> &data, Menu *parent = 0);
+	~Menu();
 
-	Menu* parent() const;
+	Menu *child(int number);
+	int childCount() const;
+	int columnCount() const;
+	QVariant data(int column) const;
+	bool insertChildren(int position, int count, int columns);
+	bool insertColumns(int position, int columns);
+	Menu *parent();
 	void setParent(Menu *parent);
-
-	QString name() const;
-	void setName(const QString name);
-
-	QString id() const;
-	void setId(const QString id);
-
-	bool checked() const;
-	void setChecked(const bool checked);
-
-	void addSubCategory(const Menu &menu);
-	void addSubCategory(const Menu &menu, int position = -1);
-	void removeSubCategory(const int position);
-	void removeSubCategory(const Menu &menu);
-	void removeSubCategories();
-
-	void addCategory(const Menu &menu, int position = -1, Menu *parent = 0);
-	void removeCategory(const Menu &menu, Menu *parent = 0);
-
-	QList<Menu> subCategories() const;
-	void setSubCategories(const QList<Menu> subCategories);
-
-	void read(const QJsonObject &json);
+	bool removeChildren(int position, int count);
+	bool removeColumns(int position, int columns);
+	int childNumber() const;
+	bool setData(int column, const QVariant &value);
+	void setChecked( bool set );
+	bool isChecked();
+	void read(const QJsonObject &json, Menu *parent = 0);
 	void write(QJsonObject &json) const;
-private:
-	Menu *mParent;
-	QString mName;
-	QString mId;
-	bool mChecked;
-	QList<Menu> mSubCategories;
+	QList<Menu*> getSubCategories() const;
+	void setSubCategories(const QList<Menu*> gSubCategories);
 
+private:
+	QList<Menu*> subCategories;
+	QVector<QVariant> itemData; // sütun değerleri
+	Menu *parentItem;
+	bool checked;
+	QString name;
+	QString id;
 };
 
 #endif // MENU_H

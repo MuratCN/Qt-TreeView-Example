@@ -1,145 +1,174 @@
 #include "menu.h"
 
-Menu::Menu()
+#include <QStringList>
+#include <QDebug>
+
+Menu::Menu(Menu *parent)
 {
+	parentItem = parent;
 }
 
-Menu::Menu(QString name, QString id, Menu *parent) :
-	mName(name),
-	mId(id),
-	mParent(parent)
+Menu::Menu(const QVector<QVariant> &data, Menu *parent)
 {
-	Menu();
+	parentItem = parent;
+	itemData = data;
 }
 
-Menu::Menu(QString name, QString id, QList<Menu> subCategories, Menu *parent):
-	mSubCategories(subCategories)
+Menu::~Menu()
 {
-	Menu(name,id,parent);
+	qDeleteAll(subCategories);
 }
 
-Menu* Menu::parent() const
+Menu *Menu::child(int number)
 {
-	return mParent;
+	return subCategories.value(number);
 }
+
+int Menu::childCount() const
+{
+	return subCategories.count();
+}
+
+int Menu::childNumber() const
+{
+	if (parentItem)
+		return parentItem->subCategories.indexOf(const_cast<Menu*>(this));
+
+	return 0;
+}
+
+int Menu::columnCount() const
+{
+	return itemData.count();
+}
+
+QVariant Menu::data(int column) const
+{
+	return itemData.value(column);
+}
+
+bool Menu::insertChildren(int position, int count, int columns)
+{
+	if (position < 0 || position > subCategories.size())
+		return false;
+
+	for (int row = 0; row < count; ++row) {
+		QVector<QVariant> data(columns);
+		Menu *item = new Menu(data, this);
+		subCategories.insert(position, item);
+	}
+
+	return true;
+}
+
+bool Menu::insertColumns(int position, int columns)
+{
+	if (position < 0 || position > itemData.size())
+		return false;
+
+	for (int column = 0; column < columns; ++column)
+		itemData.insert(position, QVariant());
+
+	foreach (Menu *child, subCategories)
+		child->insertColumns(position, columns);
+
+	return true;
+}
+
+Menu *Menu::parent()
+{
+	return parentItem;
+}
+
 void Menu::setParent(Menu *parent)
 {
-	mParent = parent;
+	parentItem = parent;
 }
 
-
-QString Menu::name() const
+bool Menu::removeChildren(int position, int count)
 {
-	return mName;
+	if (position < 0 || position + count > subCategories.size())
+		return false;
+
+	for (int row = 0; row < count; ++row)
+		delete subCategories.takeAt(position);
+
+	return true;
 }
 
-void Menu::setName(const QString name)
+bool Menu::removeColumns(int position, int columns)
 {
-	mName = name;
+	if (position < 0 || position + columns > itemData.size())
+		return false;
+
+	for (int column = 0; column < columns; ++column)
+		itemData.remove(position);
+
+	foreach (Menu *child, subCategories)
+		child->removeColumns(position, columns);
+
+	return true;
 }
 
-QString Menu::id() const
+bool Menu::setData(int column, const QVariant &value)
 {
-	return mId;
+	if (column < 0 || column >= itemData.size())
+		return false;
+
+	itemData[column] = value;
+	return true;
 }
 
-void Menu::setId(const QString id)
+//SetChecked function for Menu class
+void Menu::setChecked( bool set )
 {
-	mId = id;
+	checked = set;
 }
 
-bool Menu::checked() const
+bool Menu::isChecked()
 {
-	return mChecked;
+	return checked;
 }
 
-void Menu::setChecked(const bool checked)
+void Menu::read(const QJsonObject &json, Menu *parent)
 {
-	mChecked = checked;
-}
 
-QList<Menu> Menu::subCategories() const
-{
-	return mSubCategories;
-}
-
-void Menu::setSubCategories(const QList<Menu> subCategories)
-{
-	mSubCategories = subCategories;
-}
-
-void Menu::addSubCategory(const Menu &menu)
-{
-	mSubCategories.append(menu);
-}
-
-void Menu::addSubCategory(const Menu &menu, int position)
-{
-	if(position != -1)
-		mSubCategories.insert(position, menu);
-	else
-		mSubCategories.append(menu);
-}
-
-void Menu::removeSubCategory(const int position)
-{
-	//TODO alt kategorileri de sil
-	mSubCategories.removeAt(position);
-}
-
-void Menu::removeSubCategory(const Menu &menu)
-{
-//	mSubCategories.removeAt(mSubCategories.indexOf(menu));
-}
-
-void Menu::removeSubCategories()
-{
-	//TODO alt kategorileri sil
-	mSubCategories.clear();
-}
-
-void Menu::addCategory(const Menu &menu, int position, Menu *parent)
-{
-	if(parent != 0) {
-		parent->addSubCategory(menu,position);
-	} else {
-		mParent->addSubCategory(menu,position);
-	}
-}
-
-void Menu::removeCategory(const Menu &menu, Menu *parent)
-{
-	if(parent != 0) {
-		parent->removeSubCategory(menu);
-	} else {
-		mParent->removeSubCategory(menu);
-	}
-}
-
-void Menu::read(const QJsonObject &json)
-{
-	mSubCategories.clear();
-	mId = json["cat_id"].toString();
-	mName = json["name"].toString();
+	subCategories.clear();
+	//Gerek yok
+	id = json["cat_id"].toString();
+	name = json["name"].toString();
+	checked = false;
+//	setData(0,QString::number(checked));
+//	setData(1,name);
+//	setData(2,id);
+	itemData << 0;
+	itemData << name;
+	itemData << id;
+	parentItem = parent;
+	qDebug()<< name << "this: "<< this << " parent: " << parent;
 
 	QJsonArray subCategoryArray = json["subcategories"].toArray();
 	for (int i = 0; i < subCategoryArray.size(); ++i) {
 		QJsonObject menuObject = subCategoryArray[i].toObject();
-		Menu menu;
-		menu.read(menuObject);
-		mSubCategories.append(menu);
+		Menu *menu = new Menu();
+		menu->read(menuObject,this);
+		subCategories.append(menu);
 	}
+
+
 }
 
 void Menu::write(QJsonObject &json) const
 {
-	json["cat_id"] = mId;
-	json["name"] = mName;
-	QJsonArray subCategoryArray;
-	foreach (const Menu menu, mSubCategories) {
-		QJsonObject menuObject;
-		menu.write(menuObject);
-		subCategoryArray.append(menuObject);
-	}
-	json["subcategories"] = subCategoryArray;
+
+}
+
+QList<Menu*> Menu::getSubCategories() const
+{
+	return subCategories;
+}
+
+void Menu::setSubCategories(const QList<Menu*> gSubCategories)
+{
+	subCategories = gSubCategories;
 }

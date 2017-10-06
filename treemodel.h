@@ -4,24 +4,17 @@
 #include <QAbstractItemModel>
 #include <QModelIndex>
 #include <QVariant>
-#include <QTreeView>
 
-#include "category.h"
-
-class TreeItem;
+class Menu;
 
 class TreeModel : public QAbstractItemModel
 {
 	Q_OBJECT
 
 public:
-	TreeModel(const QStringList &headers, QObject *parent = 0);
-	TreeModel(const QStringList &headers, const QString &data,
+	TreeModel(const QStringList &headers, const QByteArray &data,
 			  QObject *parent = 0);
 	~TreeModel();
-
-	Category category() const;
-	void setCategory(const Category &category);
 
 	QVariant data(const QModelIndex &index, int role) const override;
 	QVariant headerData(int section, Qt::Orientation orientation,
@@ -50,13 +43,11 @@ public:
 					const QModelIndex &parent = QModelIndex()) override;
 
 private:
-	void setupModelData(const QStringList &lines, TreeItem *parent);
-	void setupModelData(const Category category);
-	TreeItem *getItem(const QModelIndex &index) const;
+	void setupModelData(const QJsonObject &json, Menu *parent);
+	void setupModelData(const QStringList &lines, Menu *parent);
+	Menu *getItem(const QModelIndex &index) const;
 
-	TreeItem *rootItem;
-
-	Category mCategory;
+	Menu *rootItem;
 };
 
 #endif // TREEMODEL_H
