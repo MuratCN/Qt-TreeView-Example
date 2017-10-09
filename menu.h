@@ -30,6 +30,9 @@ public:
 	bool setData(int column, const QVariant &value);
 	void setChecked( bool set );
 	bool isChecked();
+	void setCheckState(Qt::CheckState cs);
+	void setCheckStateAll(Qt::CheckState cs);
+	Qt::CheckState getCheckState();
 	void read(const QJsonObject &json, Menu *parent = 0);
 	void write(QJsonObject &json) const;
 	QList<Menu*> getSubCategories() const;
@@ -40,6 +43,7 @@ private:
 	QVector<QVariant> itemData; // sütun değerleri
 	Menu *parentItem;
 	bool checked;
+	Qt::CheckState checkState;
 	QString name;
 	QString id;
 };

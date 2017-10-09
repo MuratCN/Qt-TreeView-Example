@@ -133,22 +133,42 @@ bool Menu::isChecked()
 	return checked;
 }
 
+void Menu::setCheckState(Qt::CheckState cs)
+{
+	checkState = cs;
+}
+
+void Menu::setCheckStateAll(Qt::CheckState cs)
+{
+	checkState = cs;
+	if(cs == Qt::PartiallyChecked)
+		return;
+	foreach (Menu *category, subCategories) {
+		category->setCheckStateAll(cs);
+	}
+}
+
+Qt::CheckState Menu::getCheckState()
+{
+	return checkState;
+}
+
 void Menu::read(const QJsonObject &json, Menu *parent)
 {
 
 	subCategories.clear();
-	//Gerek yok
-	id = json["cat_id"].toString();
-	name = json["name"].toString();
-	checked = false;
-//	setData(0,QString::number(checked));
-//	setData(1,name);
-//	setData(2,id);
+
+	id = json["cat_id"].toString();//Gerek yok - itemData[1]
+	name = json["name"].toString();//Gerek yok - itemData[2]
+	//	checked = false;
+	checkState = Qt::CheckState(0);
+
 	itemData << 0;
 	itemData << name;
 	itemData << id;
+
 	parentItem = parent;
-	qDebug()<< name << "this: "<< this << " parent: " << parent;
+	//	qDebug()<< name << "this: "<< this << " parent: " << parent;
 
 	QJsonArray subCategoryArray = json["subcategories"].toArray();
 	for (int i = 0; i < subCategoryArray.size(); ++i) {
@@ -157,8 +177,6 @@ void Menu::read(const QJsonObject &json, Menu *parent)
 		menu->read(menuObject,this);
 		subCategories.append(menu);
 	}
-
-
 }
 
 void Menu::write(QJsonObject &json) const

@@ -36,7 +36,7 @@
        <bool>true</bool>
       </property>
       <property name="selectionBehavior">
-       <enum>QAbstractItemView::SelectItems</enum>
+       <enum>QAbstractItemView::SelectRows</enum>
       </property>
       <property name="horizontalScrollMode">
        <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -45,16 +45,6 @@
        <bool>false</bool>
       </property>
       <property name="allColumnsShowFocus">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="checkBox">
-      <property name="text">
-       <string>CheckBox</string>
-      </property>
-      <property name="tristate">
        <bool>true</bool>
       </property>
      </widget>

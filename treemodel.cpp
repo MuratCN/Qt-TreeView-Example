@@ -46,18 +46,25 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
 	if (!index.isValid())
 		return QVariant();
 
-	Menu *item1 = static_cast<Menu*>(index.internalPointer());
-
 	//	qDebug() << Qt::ItemDataRole(role) << " -- " << QString::number(index.row())<< "-"<<QString::number(index.column());
 	if ( role == Qt::CheckStateRole && index.column() == 0 )
 	{
-		return static_cast< int >( item1->isChecked() ? Qt::Checked : Qt::Unchecked );
+		Menu *item1 = static_cast<Menu*>(index.internalPointer());
+		//		return static_cast< int >( item1->isChecked() ? Qt::Checked : Qt::Unchecked );
+		if(item1->getCheckState() == Qt::Checked ) {
+			return static_cast< int >( Qt::Checked );
+		} else if(item1->getCheckState() == Qt::PartiallyChecked) {
+			return static_cast< int >( Qt::PartiallyChecked );
+		} else {
+			return static_cast< int >( Qt::Unchecked );
+		}
+
 	}
+
 	if (role != Qt::DisplayRole && role != Qt::EditRole)
 		return QVariant();
 
 	Menu *item = getItem(index);
-
 	return item->data(index.column());
 }
 
@@ -66,7 +73,7 @@ Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
 	if (!index.isValid())
 		return 0;
 
-	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
+	return Qt::ItemIsEditable | QAbstractItemModel::flags(index) | Qt::ItemIsTristate | Qt::ItemIsUserCheckable;
 	//	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
 	//	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsTristate;
 }
@@ -176,29 +183,35 @@ int TreeModel::rowCount(const QModelIndex &parent) const
 
 bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-	//	if (!index.isValid()) {
-	//           return;
-	//    }
-	qDebug()<<"data-role: "<< Qt::ItemDataRole(role);
+	if (!index.isValid()) {
+		return false;
+	}
 	Menu *item = getItem(index);
 	if(role == Qt::CheckStateRole)
 	{
-		qDebug()<<"Checked? "<<item->isChecked() << " Value: " << value;
-
-		if(Qt::CheckState(value.toInt())==Qt::Checked) { // veya if(value.toInt()==Qt::Checked) {
-			item->setChecked(true);
-		} else if(Qt::CheckState(value.toInt())==Qt::PartiallyChecked) {
-
-		} else { // if(Qt::CheckState(value.toInt())==Qt::Unchecked)
-			item->setChecked(false);
+		Qt::CheckState checkStateValue = Qt::CheckState(value.toInt());
+		if(checkStateValue == Qt::Checked) { // veya if(value.toInt()==Qt::Checked) {
+			item->setCheckStateAll(Qt::Checked);
+		} /*else if(checkStateValue==Qt::PartiallyChecked) {
+			item->setCheckState(Qt::PartiallyChecked);
+		}*/ else if(checkStateValue == Qt::Unchecked) {
+			item->setCheckStateAll(Qt::Unchecked);
 		}
 		dataChangedR(index);
 
-		int childCount = index.model()->rowCount(index);
-		qDebug()<<"child count: "<<QString::number(childCount);
-		for (int i = 0; i < childCount; i++) {
-			const QModelIndex &child = index.child(i, 0);
-			emit dataChanged(child, child);
+		Menu *parent = item->parent();
+		QModelIndex parentIndex = index.parent();
+		while(parent && parent != rootItem) {
+			foreach (Menu* sibling, parent->getSubCategories()) {
+				if(sibling->getCheckState() != checkStateValue) {
+					checkStateValue = Qt::PartiallyChecked;
+					break;
+				}
+			}
+			parent->setCheckState(checkStateValue);
+			emit dataChanged(parentIndex,parentIndex);
+			parentIndex = parentIndex.parent();
+			parent = parent->parent();
 		}
 
 		return true;
