@@ -123,6 +123,9 @@ bool Menu::setData(int column, const QVariant &value)
 void Menu::setChecked( bool set )
 {
 	checked = set;
+	foreach (Menu *category, subCategories) {
+		category->setChecked(set);
+	}
 }
 
 bool Menu::isChecked()

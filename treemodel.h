@@ -16,6 +16,8 @@ public:
 			  QObject *parent = 0);
 	~TreeModel();
 
+	void dataChangedR(const QModelIndex &index);
+
 	QVariant data(const QModelIndex &index, int role) const override;
 	QVariant headerData(int section, Qt::Orientation orientation,
 						int role = Qt::DisplayRole) const override;

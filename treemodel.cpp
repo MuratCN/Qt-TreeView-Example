@@ -17,12 +17,22 @@ TreeModel::TreeModel(const QStringList &headers, const QByteArray &data, QObject
 	rootItem = new Menu(rootData);
 
 	setupModelData(json, rootItem);
-//	setupModelData(QString(data).split(QString("\n")), rootItem);
+	//	setupModelData(QString(data).split(QString("\n")), rootItem);
 }
 
 TreeModel::~TreeModel()
 {
 	delete rootItem;
+}
+
+void TreeModel::dataChangedR(const QModelIndex &index)
+{
+	int childCount = index.model()->rowCount(index);
+	for (int i = 0; i < childCount; i++) {
+		const QModelIndex &child = index.child(i, 0);
+		dataChangedR(child);
+	}
+	emit dataChanged(index,index);
 }
 
 int TreeModel::columnCount(const QModelIndex & /* parent */) const
@@ -38,6 +48,7 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
 
 	Menu *item1 = static_cast<Menu*>(index.internalPointer());
 
+	//	qDebug() << Qt::ItemDataRole(role) << " -- " << QString::number(index.row())<< "-"<<QString::number(index.column());
 	if ( role == Qt::CheckStateRole && index.column() == 0 )
 	{
 		return static_cast< int >( item1->isChecked() ? Qt::Checked : Qt::Unchecked );
@@ -50,13 +61,14 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
 	return item->data(index.column());
 }
 
-//flags of TreeModel
 Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
 {
 	if (!index.isValid())
 		return 0;
 
 	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
+	//	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsUserCheckable;
+	//	return Qt::ItemIsEditable | QAbstractItemModel::flags(index)|Qt::ItemIsTristate;
 }
 
 Menu *TreeModel::getItem(const QModelIndex &index) const
@@ -162,28 +174,40 @@ int TreeModel::rowCount(const QModelIndex &parent) const
 	return parentItem->childCount();
 }
 
-
-//setData method of TreeModel
 bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
+	//	if (!index.isValid()) {
+	//           return;
+	//    }
+	qDebug()<<"data-role: "<< Qt::ItemDataRole(role);
 	Menu *item = getItem(index);
 	if(role == Qt::CheckStateRole)
 	{
-		qDebug()<<"Ischecked"<<item->isChecked();
+		qDebug()<<"Checked? "<<item->isChecked() << " Value: " << value;
 
-		if(item->isChecked())
-			item->setChecked(false);
-		else
+		if(Qt::CheckState(value.toInt())==Qt::Checked) { // veya if(value.toInt()==Qt::Checked) {
 			item->setChecked(true);
-		emit dataChanged(index, index);
+		} else if(Qt::CheckState(value.toInt())==Qt::PartiallyChecked) {
+
+		} else { // if(Qt::CheckState(value.toInt())==Qt::Unchecked)
+			item->setChecked(false);
+		}
+		dataChangedR(index);
+
+		int childCount = index.model()->rowCount(index);
+		qDebug()<<"child count: "<<QString::number(childCount);
+		for (int i = 0; i < childCount; i++) {
+			const QModelIndex &child = index.child(i, 0);
+			emit dataChanged(child, child);
+		}
+
 		return true;
 	}
 
 	if (role != Qt::EditRole)
 		return false;
+
 	bool result = item->setData(index.column(), value);
-
-
 	if (result)
 		emit dataChanged(index, index);
 
@@ -209,9 +233,7 @@ bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
 
 void TreeModel::setupModelData(const QJsonObject &json, Menu *parent)
 {
-	qDebug()<<"Setup";
 	QList<Menu*> parents;
-	//parents << parent;
 
 	QJsonArray categoryArray = json["categories"].toArray();
 	for (int i = 0; i < categoryArray.size(); ++i) {
